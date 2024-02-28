@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22522" systemVersion="22G513" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AccountEntity" representedClassName="AccountEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="accountName" optional="YES" attributeType="String"/>
+        <attribute name="accountNum" optional="YES" attributeType="String"/>
+        <attribute name="accountType" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="balance" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="bgColor" optional="YES" attributeType="Integer 64" valueTransformerName="ColorValueTransformer" defaultValueString="0" usesScalarValueType="YES" customClassName="[CGColor]"/>
+        <attribute name="defaultAccount" optional="YES" attributeType="Boolean" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="showHomePage" optional="YES" attributeType="Boolean" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="bills" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="BillEntity" inverseName="account" inverseEntity="BillEntity"/>
+    </entity>
+    <entity name="BillEntity" representedClassName="BillEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="amount" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="orderByDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="remark" optional="YES" attributeType="String"/>
+        <relationship name="account" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="AccountEntity" inverseName="bills" inverseEntity="AccountEntity"/>
+        <relationship name="billType" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="BillTypeEntity" inverseName="bills" inverseEntity="BillTypeEntity"/>
+    </entity>
+    <entity name="BillTypeEntity" representedClassName="BillTypeEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="order" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="type" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="typeName" optional="YES" attributeType="String"/>
+        <relationship name="bills" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="BillEntity" inverseName="billType" inverseEntity="BillEntity"/>
+    </entity>
+</model>
