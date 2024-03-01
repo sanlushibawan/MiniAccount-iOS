@@ -10,23 +10,13 @@ import SwiftUI
 @main
 struct MiniAccount_iOSApp: App {
     @ObservedObject var miniAccountModel = MiniAccountModel()
-    @AppStorage("openFaceIdOrTouchId") private var openAuth = false
     @State var isUnlocked:Bool = false
     @State var blurRadius = 0.0
     @Environment(\.scenePhase) var senePhase
-    var isOpenFaceId:Bool = false
-    init(){
-        isOpenFaceId = openAuth
-    }
     var body: some Scene {
         WindowGroup {
             ZStack{
-                if isOpenFaceId{
-                    if isUnlocked {ContentView(miniAccountModel: miniAccountModel)}
-                    else {CheckDeviceOwnerView(isUnLock: $isUnlocked)}
-                }else{
-                    ContentView(miniAccountModel: miniAccountModel)
-                }
+                ContentView(miniAccountModel: miniAccountModel)
             }.blur(radius: blurRadius)
                 .onChange(of: senePhase){value in
                     switch(value){

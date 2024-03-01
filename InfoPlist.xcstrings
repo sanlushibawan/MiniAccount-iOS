@@ -35,23 +35,6 @@
           }
         }
       }
-    },
-    "NSFaceIDUsageDescription" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en-GB" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable the FaceID permission to unlock the App"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开启FaceID权限用于解锁App"
-          }
-        }
-      }
     }
   },
   "version" : "1.0"

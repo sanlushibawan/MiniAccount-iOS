@@ -15,25 +15,14 @@ struct SettingView: View {
     @State var inComeType = false
     @State var showEditBillTypeSheet = false
     @State var editIndex = 0
-    @State var showAlert = false
     @AppStorage("userName") private var userName = ""
-    @AppStorage("openFaceIdOrTouchId") private var useFaceId = false
+    @State var showAbout = false
     var body: some View {
         NavigationStack{
             VStack{
                 Form{
                     Section("修改用户信息"){
                         TextField("怎么称呼你", text: $userName)
-                    }
-                    Section("隐私"){
-                        Toggle(isOn: $useFaceId, label: {
-                            if LAContext().biometryType == .touchID {
-                                Label("TouchId", systemImage: "touchid")}else{
-                                    Label("FaceId", systemImage: "faceid")
-                                }
-                        }).onChange(of: useFaceId){value in
-                            canUseFaceidOrTouchId()
-                        }
                     }
                     Section("添加消费类型"){
                         Toggle(isOn: $inComeType, label: {inComeType ? Label("收入",systemImage:"square.and.arrow.down"):Label("支出",systemImage:"square.and.arrow.up")})
@@ -69,33 +58,36 @@ struct SettingView: View {
                         }.onDelete(perform:dbContext.removeBillType).onMove(perform: dbContext.moveBillType)
                     }
                 }
-            }.navigationTitle("个人&类型设置")
+            }.navigationTitle("个人&类型设置").toolbar(content: {
+                Button{showAbout = true}label: {
+                    Text("About")
+                }
+            })
         }.sheet(isPresented: $showEditBillTypeSheet){
             EditBillTypeSheet(miniDB: dbContext,updateIndex: $editIndex)
-        }.alert("No Permission",isPresented: $showAlert){
-            Button(role: .cancel) {
-                // Handle the deletion.
-            } label: {
-                Text("取消")
+        }.sheet(isPresented: $showAbout){
+            NavigationStack{
+                List{
+                    Section("Application Version"){
+                        let displayName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as! String
+                        let versionCode = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
+                        let buildCode = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as! String
+                        Text("Application Name:\(displayName)")
+                        Text("version code:\(versionCode)")
+                        Text("Build:\(buildCode)")
+                    }
+                    Section("Open source info"){
+                        Image("github").resizable().frame(width:30,height:30)
+                        Text("sanlushibawan")
+                        Text("LICENSE:GPL-3.0 license")
+                        Button{
+                            UIPasteboard.general.string = "https://github.com/sanlushibawan/MiniAccount-iOS"
+                        }label: {
+                            Text("Copy repository address")
+                        }
+                    }
+                }.navigationTitle("About Application")
             }
-            Button("去开启") {
-                // Handle the retry action.
-                guard let url = URL(string: UIApplication.openSettingsURLString) else{
-                    return
-                }
-                UIApplication.shared.open(url)
-            }
-        }message: {
-            Text("开启面容 ID 权限才能使用锁定功能")
-        }
-    }
-    
-    func canUseFaceidOrTouchId(){
-        let context = LAContext()
-        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: .none){
-        }else{
-            showAlert = true
-            useFaceId = false
         }
     }
 }
