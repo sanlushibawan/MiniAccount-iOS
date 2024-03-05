@@ -39,12 +39,16 @@ struct ContentView: View {
                             Text(Date(),style: .date)
                         }
                         Spacer()
-                        NavigationLink(destination: SettingView(dbContext: miniAccountModel), label: {Image(systemName: "person.circle").imageScale(.large)})
+                        NavigationLink(destination: SettingView(dbContext: miniAccountModel), label: {Image(systemName: "person.text.rectangle").imageScale(.large)})
                     }.padding()
                     VStack{
                         NavigationLink(destination:AccountListView(miniAccountModel: miniAccountModel)){
                             VStack{
-                                Text("Account&Balance")
+                                HStack{
+                                    Text("Account&Balance")
+                                    Spacer()
+                                    Text("管理").foregroundStyle(Color.accentColor)
+                                }
                                 Divider()
                                 VStack(spacing:8){
                                     if miniAccountModel.accountList.isEmpty {
@@ -56,51 +60,50 @@ struct ContentView: View {
                                                 let nameAndNum = (indexAccount.accountName ?? "")+" "+(indexAccount.accountNum ?? "").suffix(4)
                                                 Text(nameAndNum).foregroundColor(colorList[Int(indexAccount.bgColor)])
                                                 Spacer()
-                                                if indexAccount.accountType == 1{
-                                                    Text("储蓄")
-                                                    Image(systemName: "creditcard.fill")
-                                                }else{
-                                                    Text("信用")
-                                                    Image(systemName: "creditcard")
-                                                }
-                                                Spacer()
                                                 Text(String(format:"%.2F", indexAccount.balance))
-                                            }
+                                            }.padding(.horizontal)
                                         }
                                     }
                                 }
-                            }.frame(maxWidth:.infinity).padding().background(.regularMaterial).cornerRadius(8)
+                            }.frame(maxWidth:.infinity).padding().background(Color(UIColor.tertiarySystemBackground)).cornerRadius(8)
                         }.buttonStyle(PlainButtonStyle())
-                    }.frame(maxWidth:.infinity).padding().shadow(radius: 5)
+                    }.frame(maxWidth:.infinity).padding()
                     LazyVStack{
-                        ForEach(miniAccountModel.billList.prefix(20)){ itemIndex in
-                            let itemType = itemIndex.billType ?? miniAccountModel.billTypeList[0]
-                            let itemAccount = itemIndex.account ?? miniAccountModel.accountList[0]
-                            VStack{
-                                HStack{
-                                    VStack(alignment: .leading){
-                                        let typeColor = itemType.type ? Color.red:Color.green
-                                        Text(itemType.typeName ?? "").foregroundColor(typeColor)
-                                        Text(itemAccount.accountName ?? "")
-                                    }
-                                    Spacer()
-                                    VStack(alignment: .trailing){
-                                        let amountText = (itemType.type ? "+":"-") + String(format :"%.2f", itemIndex.amount)
-                                        Text(amountText)
-                                        Text(itemIndex.remark ?? "").lineLimit(1).truncationMode(.tail)
-                                    }
-                                }
-                                Divider()
-                            }.padding(.horizontal).onTapGesture {
-                                showBillDetailView = true
-                                showBill = miniAccountModel.billList.firstIndex(of: itemIndex) ?? 0
+                        Section("最新20条账单"){
+                            ForEach(miniAccountModel.billList.prefix(20)){ itemIndex in
+                                let itemType = itemIndex.billType ?? miniAccountModel.billTypeList[0]
+                                let itemAccount = itemIndex.account ?? miniAccountModel.accountList[0]
+                                VStack{
+                                    VStack{
+                                        HStack{
+                                            VStack(alignment: .leading){
+                                                let typeColor = itemType.type ? Color.red:Color.green
+                                                Text(itemType.typeName ?? "").foregroundColor(typeColor)
+                                                Text(itemIndex.remark ?? "").lineLimit(1).truncationMode(.tail)
+                                            }
+                                            Spacer()
+                                            VStack(alignment: .trailing){
+                                                let amountText = (itemType.type ? "+":"-") + String(format :"%.2f", itemIndex.amount)
+                                                Text(itemAccount.accountName ?? "")
+                                                Text(amountText)
+                                            }
+                                        }.contentShape(Rectangle())
+                                        .onTapGesture {
+                                            showBillDetailView = true
+                                            showBill = miniAccountModel.billList.firstIndex(of: itemIndex) ?? 0
+                                        }
+                                    }.frame(maxWidth: .infinity).padding(.horizontal)
+                                        .background(Color(UIColor.tertiarySystemBackground)).clipShape(RoundedRectangle(cornerRadius: 8.0))
+                                }.padding(.horizontal)
                             }
                         }
                         if !miniAccountModel.billList.isEmpty {
-                            NavigationLink(destination: BillListView(miniDB:miniAccountModel,showDetail: miniAccountModel.billList[0]), label: {Text("全部账单")})
+                            NavigationLink(destination: BillListView(miniDB:miniAccountModel,showDetail: miniAccountModel.billList[0]), label: {Text("全部账单")}).padding()
+                        }else{
+                            Text("没有更多数据啦～").padding()
                         }
                     }
-                }
+                }.background(Color(UIColor.systemGroupedBackground))
                 Button(action:{
                     showAddNewBill = true
                 }){

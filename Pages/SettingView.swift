@@ -24,6 +24,9 @@ struct SettingView: View {
                     Section("修改用户信息"){
                         TextField("怎么称呼你", text: $userName)
                     }
+                    NavigationLink(destination: ExportBillView(dbContext: dbContext), label: {
+                        Label("备份账单",systemImage: "arrow.up.forward.app")
+                    })
                     Section("添加消费类型"){
                         Toggle(isOn: $inComeType, label: {inComeType ? Label("收入",systemImage:"square.and.arrow.down"):Label("支出",systemImage:"square.and.arrow.up")})
                         HStack{
@@ -58,11 +61,11 @@ struct SettingView: View {
                         }.onDelete(perform:dbContext.removeBillType).onMove(perform: dbContext.moveBillType)
                     }
                 }
-            }.navigationTitle("个人&类型设置").toolbar(content: {
+            }.navigationTitle("个人&类型设置").toolbar{
                 Button{showAbout = true}label: {
                     Text("About")
                 }
-            })
+            }
         }.sheet(isPresented: $showEditBillTypeSheet){
             EditBillTypeSheet(miniDB: dbContext,updateIndex: $editIndex)
         }.sheet(isPresented: $showAbout){

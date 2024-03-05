@@ -12,6 +12,7 @@ struct MiniAccount_iOSApp: App {
     @ObservedObject var miniAccountModel = MiniAccountModel()
     @State var isUnlocked:Bool = false
     @State var blurRadius = 0.0
+    @State private var showImport = false
     @Environment(\.scenePhase) var senePhase
     var body: some Scene {
         WindowGroup {
@@ -32,7 +33,13 @@ struct MiniAccount_iOSApp: App {
                     }
                 }message: {
                     Text("An error loading the database, and the application needs to be reinstalled.").foregroundStyle(Color.red)
-                }
+                }.onOpenURL(perform: { url in
+                    if url.isFileURL {
+                        miniAccountModel.getFileToJSON(url: url)
+                        showImport = true}
+                }).sheet(isPresented: $showImport, content: {
+                    ImportDataSheetView(miniDB: miniAccountModel)
+                })
         }
     }
 }

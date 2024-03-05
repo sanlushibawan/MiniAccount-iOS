@@ -86,7 +86,8 @@ struct BillListView: View {
                                 Text(billItem.remark ?? "").lineLimit(1).truncationMode(.tail)
                                 Spacer()
                             }
-                        }.onTapGesture{
+                        }.contentShape(Rectangle())
+                        .onTapGesture{
                             showDetail = billItem
                             showDetailSheet = true
                         }

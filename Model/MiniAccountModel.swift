@@ -14,6 +14,7 @@ final class MiniAccountModel:ObservableObject{
     @Published var billListBy: [BillEntity] = []
     @Published var searchingBills:Bool = true
     @Published var databaseError:Bool = false
+    @Published var miniJSON:MiniAccountJSON = MiniAccountJSON()
     let container:NSPersistentContainer
     init(){
         container = NSPersistentContainer(name: "MiniAccountModel")
@@ -88,30 +89,12 @@ final class MiniAccountModel:ObservableObject{
         saveBillType()
     }
     func moveBillType(at source:IndexSet, destination:Int){
-        let onMoveType = source.first!
-        if onMoveType < destination{
-            var startIndex = onMoveType + 1
-            let endIndex = destination + 1
-            var startType = billTypeList[onMoveType].order
-            while startIndex <= endIndex{
-                billTypeList[startIndex].order = startType
-                startType += 1
-                startIndex += 1
-            }
-            billTypeList[onMoveType].order = startType
-        }else{
-            var startIndex = destination
-            let endIndex = onMoveType - 1
-            var startType = billTypeList[destination].order + 1
-            let newType = billTypeList[destination].order
-            while startIndex <= endIndex {
-                billTypeList[startIndex].order = startType
-                startIndex += 1
-                startType += 1
-            }
-            billTypeList[onMoveType].order = newType
-        }
         billTypeList.move(fromOffsets: source, toOffset: destination)
+        var newOrder:Int64 = 0
+        for typeIndex in billTypeList{
+            typeIndex.order = newOrder
+            newOrder += 1
+        }
         do{ try? container.viewContext.save() }
     }
     
@@ -182,4 +165,133 @@ final class MiniAccountModel:ObservableObject{
         }
     }
     
+    
+    func exportJSON()->String{
+        var miniAccountJSON = MiniAccountJSON()
+        for accountItem in accountList{
+            var accountJson = AccountJSON()
+            accountJson.accountName = accountItem.accountName
+            accountJson.accountNum = accountItem.accountNum
+            accountJson.accountType = accountItem.accountType
+            accountJson.balance = accountItem.balance
+            accountJson.showHomePage = accountItem.showHomePage
+            accountJson.bgColor = accountItem.bgColor
+            miniAccountJSON.accountList.append(accountJson)
+        }
+        for billTypeItem in billTypeList{
+            let billTypeJSON = BillTypeJSON(order: billTypeItem.order,type:billTypeItem.type,typeName: billTypeItem.typeName)
+            miniAccountJSON.billTypeList.append(billTypeJSON)
+        }
+        for billItem in billListBy{
+            var billJSON = BillJSON()
+            billJSON.remark = billItem.remark
+            billJSON.orderByDate = billItem.orderByDate
+            billJSON.amount = billItem.amount
+            let billAccount = billItem.account ?? accountList[0]
+            billJSON.account = AccountJSON(accountName: billAccount.accountName,accountNum: billAccount.accountNum,
+                                          accountType: billAccount.accountType,balance: billAccount.balance,showHomePage: billAccount.showHomePage, bgColor: billAccount.bgColor)
+            let billsBillType = billItem.billType ?? billTypeList[0]
+            billJSON.billType = BillTypeJSON(order: billsBillType.order,type: billsBillType.type,typeName: billsBillType.typeName)
+            miniAccountJSON.billList.append(billJSON)
+        }
+        do{
+            let jsonData = try JSONEncoder().encode(miniAccountJSON)
+            let jsonString = String(data: jsonData, encoding: .utf8)!
+            return jsonString
+        }catch{
+            return ""
+        }
+    }
+    @Published var finishImport = false
+    func getFileToJSON(url:URL){
+        let data = try? Data(contentsOf: url)
+        miniJSON = try! JSONDecoder().decode(MiniAccountJSON.self, from: data ?? Data())
+    }
+    
+    @Published var loadingProgress = 0.0
+    func importJSONToDB(){
+        var start:Double = 0.0
+        let total:Double = Double(miniJSON.accountList.count + miniJSON.billList.count + miniJSON.billTypeList.count)
+        for accountIndex in miniJSON.accountList{
+            let resAccount = accountList.filter { accountF in
+                accountF.accountNum == accountIndex.accountNum && accountF.accountName == accountIndex.accountName
+            }
+            if resAccount.isEmpty{
+                let newAccount = AccountEntity(context: container.viewContext)
+                newAccount.accountName = accountIndex.accountName
+                newAccount.accountNum = accountIndex.accountNum
+                newAccount.accountType = accountIndex.accountType ?? 0
+                newAccount.balance = accountIndex.balance ?? 0.0
+                newAccount.bgColor = accountIndex.bgColor ?? 0
+                newAccount.defaultAccount = false
+                newAccount.showHomePage = accountIndex.showHomePage ?? false
+                accountList.append(newAccount)
+            }
+            start += 1.0
+            loadingProgress = start/total
+        }
+        for typeIndex in miniJSON.billTypeList{
+            let resType = billTypeList.filter { billTypeI in
+                billTypeI.typeName == typeIndex.typeName && billTypeI.type == typeIndex.type
+            }
+            if resType.isEmpty{
+                let newType = BillTypeEntity(context: container.viewContext)
+                newType.type = typeIndex.type ?? false
+                newType.typeName = typeIndex.typeName
+                newType.order = typeIndex.order ?? 0
+                billTypeList.append(newType)
+            }
+            start += 1.0
+            loadingProgress = start/total
+        }
+        for billIndex in miniJSON.billList{
+            let resBill = billList.filter{billI in
+                billI.amount == billIndex.amount && billI.remark == billIndex.remark &&
+                billI.orderByDate == billIndex.orderByDate
+            }
+            if resBill.isEmpty{
+                let newBill = BillEntity(context: container.viewContext)
+                newBill.amount = billIndex.amount ?? 0.0
+                newBill.orderByDate = billIndex.orderByDate
+                newBill.remark = billIndex.remark
+                let accountImport = billIndex.account ?? AccountJSON()
+                let resAccount = accountList.filter { accountF in
+                    accountF.accountNum == accountImport.accountNum && accountF.accountName == accountImport.accountName
+                }
+                if resAccount.isEmpty{
+                    let accountN = AccountEntity(context: container.viewContext)
+                    accountN.accountName = accountImport.accountName
+                    accountN.accountNum = accountImport.accountNum
+                    accountN.accountType = accountImport.accountType ?? 0
+                    accountN.balance = accountImport.balance ?? 0.0
+                    accountN.bgColor = accountImport.bgColor ?? 0
+                    accountN.defaultAccount = false
+                    accountN.showHomePage = accountImport.showHomePage ?? false
+                    newBill.account = accountN
+                }else{
+                    newBill.account =  resAccount.first
+                }
+                let typeImport = billIndex.billType ?? BillTypeJSON()
+                let resType = billTypeList.filter { billTypeI in
+                    billTypeI.typeName == typeImport.typeName && billTypeI.type == typeImport.type
+                }
+                if resType.isEmpty{
+                    let billTypeN = BillTypeEntity(context: container.viewContext)
+                    billTypeN.type = typeImport.type ?? false
+                    billTypeN.typeName = typeImport.typeName
+                    billTypeN.order = typeImport.order ?? 0
+                    newBill.billType = billTypeN
+                }else{
+                    newBill.billType = resType.first
+                }
+                billList.append(newBill)
+            }
+            start += 1.0
+            loadingProgress = start/total
+        }
+        do{
+            try? container.viewContext.save()
+            finishImport = true
+        }
+    }
 }
